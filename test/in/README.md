@@ -4,7 +4,7 @@ Use your Markdowns to create some HTMLs. This is still work in progress so this 
 
 Version: 0.2.0
 
-See [CHANGELOG.md](./CHANGELOG.md) to see changes.
+See [CHANGELOG.md](./CHANGELOG) to see changes.
 
 ## To-dos
 

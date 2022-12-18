@@ -1,6 +1,6 @@
 {
     "name": "docs-builder",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "",
     "main": "dist/index.js",
     "bin": {
@@ -26,14 +26,11 @@
         "commander": "^9.4.1",
         "fs-extra": "^11.1.0",
         "jsdom": "^20.0.3",
-        "markdown": "^0.5.0",
-        "markdown-it": "^13.0.1",
-        "minimist": "^1.2.7"
+        "markdown-it": "^13.0.1"
     },
     "devDependencies": {
         "@types/fs-extra": "^9.0.13",
         "@types/jsdom": "^20.0.1",
-        "@types/markdown-it": "^12.2.3",
-        "@types/minimist": "^1.2.2"
+        "@types/markdown-it": "^12.2.3"
     }
 }

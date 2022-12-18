@@ -31,15 +31,29 @@ const commander_1 = require("commander");
 const path_1 = __importDefault(require("path"));
 const doc = __importStar(require(".."));
 const cwd = process.cwd();
-commander_1.program.name("docs-builder").description("A documentation builder in Node.js").version("0.1.0");
+commander_1.program.name("docs-builder").description("A documentation builder in Node.js").version("0.2.0");
 commander_1.program
     .command("build")
-    .description("Build the documentation")
+    .description("build the documentation")
     .argument("<in>")
     .argument("<out>")
     .action((inDir, outDir) => {
-    const inDirPath = path_1.default.join(cwd, inDir);
-    const outDirPath = path_1.default.join(cwd, outDir);
+    const inDirPath = path_1.default.isAbsolute(inDir) ? path_1.default.join(inDir, ".") : path_1.default.join(cwd, inDir);
+    const outDirPath = path_1.default.isAbsolute(outDir)
+        ? path_1.default.join(outDir, ".")
+        : path_1.default.join(cwd, outDir);
     doc.build(inDirPath, outDirPath);
+});
+commander_1.program
+    .command("watch")
+    .description("watch")
+    .argument("<in>")
+    .argument("<out>")
+    .action((inDir, outDir) => {
+    const inDirPath = path_1.default.isAbsolute(inDir) ? path_1.default.join(inDir, ".") : path_1.default.join(cwd, inDir);
+    const outDirPath = path_1.default.isAbsolute(outDir)
+        ? path_1.default.join(outDir, ".")
+        : path_1.default.join(cwd, outDir);
+    doc.watch(inDirPath, outDirPath);
 });
 commander_1.program.parse();
