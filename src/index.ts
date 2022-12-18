@@ -2,10 +2,17 @@ import fs from "fs-extra";
 import jsdom from "jsdom";
 import markdown from "markdown-it";
 import path from "path";
+import yaml from "yaml";
 
 export function build(inDirPath: string, outDirPath: string) {
     if (!fs.existsSync(inDirPath)) throw new Error(`"${inDirPath}" isn't exist.`);
-    // fs.removeSync(outDirPath);
+    fs.removeSync(outDirPath);
+    fs.mkdirpSync(outDirPath);
+
+    /*const sidebarPath = path.join(inDirPath, ".sidebar.yaml");
+    const sidebar = fs.existsSync(sidebarPath)
+        ? yaml.parse(fs.readFileSync(sidebarPath).toString())
+        : null;*/
 
     const templatePath = path.join(inDirPath, ".template.html");
     if (!fs.existsSync(templatePath)) throw new Error(`".template.html" isn't exist.`);
@@ -48,7 +55,7 @@ export function build(inDirPath: string, outDirPath: string) {
                     title
                 );
 
-                const sidebar = new jsdom.JSDOM();
+                const sidebarDom = new jsdom.JSDOM();
 
                 var output = page.serialize();
 

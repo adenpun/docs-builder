@@ -1,5 +1,9 @@
 # 0.X.X
 
+## 0.2.1
+
+-   Fixed a bug.
+
 ## 0.2.0
 
 -   Now using `*/index.html` instead of `*.html`

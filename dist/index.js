@@ -11,6 +11,8 @@ const path_1 = __importDefault(require("path"));
 function build(inDirPath, outDirPath) {
     if (!fs_extra_1.default.existsSync(inDirPath))
         throw new Error(`"${inDirPath}" isn't exist.`);
+    fs_extra_1.default.removeSync(outDirPath);
+    fs_extra_1.default.mkdirpSync(outDirPath);
     const templatePath = path_1.default.join(inDirPath, ".template.html");
     if (!fs_extra_1.default.existsSync(templatePath))
         throw new Error(`".template.html" isn't exist.`);
@@ -39,7 +41,7 @@ function build(inDirPath, outDirPath) {
                     container.append(contentDom.window.document.body);
                 });
                 page.window.document.title = page.window.document.title.replaceAll("{title}", title);
-                const sidebar = new jsdom_1.default.JSDOM();
+                const sidebarDom = new jsdom_1.default.JSDOM();
                 var output = page.serialize();
                 const isReadme = fileBasename.toLowerCase() === "readme";
                 const outFilePath = isReadme

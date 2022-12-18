@@ -7,7 +7,7 @@ import * as doc from "..";
 
 const cwd = process.cwd();
 
-program.name("docs-builder").description("A documentation builder in Node.js").version("0.2.0");
+program.name("docs-builder").description("A documentation builder in Node.js").version("0.2.1");
 
 program
     .command("build")
