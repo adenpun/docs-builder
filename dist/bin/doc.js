@@ -31,7 +31,7 @@ const commander_1 = require("commander");
 const path_1 = __importDefault(require("path"));
 const doc = __importStar(require(".."));
 const cwd = process.cwd();
-commander_1.program.name("docs-builder").description("A documentation builder in Node.js").version("0.2.0");
+commander_1.program.name("docs-builder").description("A documentation builder in Node.js").version("0.2.1");
 commander_1.program
     .command("build")
     .description("build the documentation")
