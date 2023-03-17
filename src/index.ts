@@ -1,174 +1,177 @@
-import fs from "fs-extra";
-import jsdom from "jsdom";
-import markdown from "markdown-it";
-import path from "path";
-import prettier from "prettier";
-import yaml from "yaml";
+import FS from "fs-extra";
+import HighlightJs from "highlight.js";
+import JsDom from "jsdom";
+import JQuery from "jquery";
+import Markdown from "markdown-it";
+import Path from "path";
+import PathExt from "path-extra";
+import Prettier from "prettier";
+import YAML from "yaml";
+
+interface IFileInfo {
+    basename: string;
+    basenameExt: string;
+    content?: string;
+    ext: string;
+    path: string;
+    stat: FS.Stats;
+}
+
+function getFileInfo(path: string): IFileInfo {
+    const basenameExt = PathExt.base(path, true);
+    const basename = PathExt.base(path, true);
+    const content = FS.statSync(path).isFile() ? FS.readFileSync(path).toString() : undefined;
+    const ext = Path.extname(path);
+    const absPath = path;
+    const stat = FS.statSync(path);
+    return {
+        basename: basename,
+        basenameExt: basenameExt,
+        content,
+        ext,
+        path: absPath,
+        stat,
+    };
+}
 
 export function build(inDirPath: string, outDirPath: string) {
-    if (!fs.existsSync(inDirPath)) throw new Error(`"${inDirPath}" isn't exist.`);
-    fs.removeSync(outDirPath);
-    fs.mkdirpSync(outDirPath);
+    const basicData = {} as IBasicData;
 
-    const sidebarPath = path.join(inDirPath, ".sidebar.yaml");
-    const sidebar: string[] = fs.existsSync(sidebarPath)
-        ? yaml.parse(fs.readFileSync(sidebarPath).toString())
-        : null;
+    basicData.inDirPath = inDirPath;
+    basicData.outDirPath = outDirPath;
 
-    console.log(sidebar);
+    if (!FS.existsSync(inDirPath)) throw new Error(`"${inDirPath}" isn't exist.`);
+    FS.removeSync(outDirPath);
+    FS.mkdirpSync(outDirPath);
 
-    const templatePath = path.join(inDirPath, ".template.html");
-    if (!fs.existsSync(templatePath)) throw new Error(`".template.html" isn't exist.`);
-    const template = fs.readFileSync(templatePath).toString();
+    basicData.templatePath = Path.join(inDirPath, "./.template.html");
+    if (!FS.existsSync(basicData.templatePath)) {
+        basicData.templatePath = Path.join(__dirname, "../static/.template.html");
+    }
 
-    const files = fs.readdirSync(inDirPath);
+    summaryHandler(getFileInfo(Path.join(inDirPath, "./.summary.md")), basicData);
 
-    files.forEach((file) => {
-        const filePath = path.join(inDirPath, file);
-        const fileStat = fs.lstatSync(filePath);
-        const fileBasename = path.basename(file, path.extname(file));
+    console.log("\nFinished building. Yay!");
+}
 
-        if (fileStat.isFile()) {
-            const fileContent = fs.readFileSync(filePath).toString();
-            const fileExt = path.extname(filePath);
-            const isReadme = fileBasename.toLowerCase() === "readme";
+interface IBasicData {
+    inDirPath: string;
+    outDirPath: string;
+    templatePath: string;
+}
 
-            const outFilePath = isReadme
-                ? path.join(outDirPath, "index.html")
-                : path.join(outDirPath, fileBasename, "index.html");
+function summaryHandler(fileInfo: IFileInfo, basicData: IBasicData) {
+    if (fileInfo.content) {
+        const html = Markdown().render(fileInfo.content.replaceAll(/(\n|\r\n)+/g, "\n"));
+        const dom = new JsDom.JSDOM(html);
+        const window = dom.window as any as Window;
+        const summary: ISummaryItem = { children: [], label: "root" };
+        const $ = JQuery(window) as any as JQueryStatic;
+        const $ul = $("body > ul");
+        const parse = ($parent: JQuery, parent: ISummaryItem) => {
+            $parent.children().each((i, ele) => {
+                const tagName = $(ele)[0].tagName;
+                const item: ISummaryItem = { children: [], label: "" };
+                const t = $(ele)
+                    .contents()
+                    .filter((i, ele) => ele.nodeType === 3)
+                    .text()
+                    .trim();
 
-            if (fileExt.toLowerCase() === ".md") {
-                const page = new jsdom.JSDOM(template);
-
-                const out = markdown().render(fileContent);
-                const contentDom = new jsdom.JSDOM(out);
-
-                //#region Sidebar
-                const sidebarDom = new jsdom.JSDOM();
-
-                const sidebarDomList = sidebarDom.window.document.createElement("ul");
-
-                sidebarDom.window.document.body.append(sidebarDomList);
-
-                sidebar.forEach((ele) => {
-                    const filePath =
-                        ele === "index"
-                            ? path.join(inDirPath, "readme.md")
-                            : path.join(inDirPath, ele + ".md");
-                    const fileContent = fs.readFileSync(filePath);
-
-                    const fileBasename = path.basename(filePath, path.extname(filePath));
-
-                    const isReadme2 = fileBasename.toLowerCase() === "readme";
-
-                    const outFilePath2 = isReadme2
-                        ? path.join(outDirPath, "index.html")
-                        : path.join(outDirPath, fileBasename, "index.html");
-
-                    const dom = new jsdom.JSDOM(markdown().render(fileContent.toString()));
-                    const title =
-                        dom.window.document.querySelector("h1")?.textContent ?? fileBasename;
-                    const item = sidebarDom.window.document.createElement("li");
-                    const link = sidebarDom.window.document.createElement("a");
-                    link.textContent = title;
-                    link.href = path.relative(
-                        path.dirname(outFilePath),
-                        path.dirname(outFilePath2)
-                    );
-                    item.append(link);
-                    sidebarDomList.append(item);
-                });
-                //#endregion
-
-                const title =
-                    contentDom.window.document.querySelector("h1")?.textContent ?? fileBasename;
-
-                page.window.document.querySelectorAll("docs-title").forEach((element) => {
-                    element.replaceWith(title);
-                });
-
-                page.window.document.querySelectorAll("docs-content").forEach((element) => {
-                    const container = contentDom.window.document.createElement("div");
-                    container.classList.add("content");
-                    element.before(container);
-                    element.remove();
-                    container.append(...contentDom.window.document.body.childNodes);
-                });
-
-                page.window.document.querySelectorAll("docs-sidebar").forEach((element) => {
-                    const container = contentDom.window.document.createElement("div");
-                    container.classList.add("sidebar");
-                    element.before(container);
-                    element.remove();
-                    container.append(...sidebarDom.window.document.body.childNodes);
-                });
-
-                page.window.document.querySelectorAll("a").forEach((element) => {
-                    const href = element.href;
-
-                    const fileBasename = path.basename(href, path.extname(href));
-
-                    if (path.extname(href).toLowerCase() === ".md") {
-                        const isReadme2 = fileBasename.toLowerCase() === "readme";
-
-                        const outFilePath2 = isReadme2
-                            ? path.join(outDirPath, "index.html")
-                            : path.join(outDirPath, fileBasename, "index.html");
-
-                        element.href = path.relative(
-                            path.dirname(outFilePath),
-                            path.dirname(outFilePath2)
-                        );
+                if (tagName === "LI" || tagName === "A") {
+                    if (t) {
+                        item.label = t;
+                        parent.children.push(item);
+                        if (tagName === "A") {
+                            const href = $(ele).attr("href");
+                            if (href) {
+                                item.link = Path.normalize(href);
+                            }
+                        }
+                        return parse($(ele), item);
+                    } else {
+                        return parse($(ele), parent);
                     }
-                });
-
-                page.window.document.querySelectorAll("img").forEach((element) => {
-                    const href = element.src;
-
-                    const fileName = path.basename(href, path.extname(href)) + path.extname(href);
-
-                    const outFilePath2 = path.join(outDirPath, href);
-
-                    element.src = path.relative(path.dirname(outFilePath), outFilePath2);
-                });
-
-                page.window.document.title = page.window.document.title.replaceAll(
-                    "{title}",
-                    title
-                );
-
-                var output = page.serialize();
-
-                if (!isReadme) {
-                    const p = path.join(outDirPath, fileBasename);
-                    if (!fs.existsSync(p)) fs.mkdirpSync(p);
+                } else {
+                    return parse($(ele), parent);
                 }
-                fs.writeFileSync(
-                    outFilePath,
-                    prettier.format(output, { parser: "html", tabWidth: 4 })
-                );
-            } else {
-                fs.copySync(
-                    filePath,
-                    path.join(
-                        outDirPath,
-                        filePath.slice(
-                            filePath.length - fileExt.length - 1 - fileBasename.length + 1,
-                            filePath.length
-                        )
-                    )
-                );
+            });
+        };
+
+        parse($ul, summary);
+
+        buildPages(summary);
+    }
+}
+
+function buildPages(summary: ISummaryItem) {
+    const parseSidebar = () => {};
+    const sidebar = summary;
+    console.log(JSON.stringify(summary, null, 4));
+}
+
+function buildPage(path: string, basicData: IBasicData) {
+    console.log(`Building ${path}...`);
+    const fileInfo = getFileInfo(Path.join(basicData.inDirPath, path));
+    if (fileInfo.content) {
+        const html = Markdown({
+            highlight: (str, lang) => {
+                if (lang && HighlightJs.getLanguage(lang)) {
+                    try {
+                        return HighlightJs.highlight(str, { language: lang }).value;
+                    } catch (error) {}
+                }
+
+                return "";
+            },
+        }).render(fileInfo.content);
+
+        const template = FS.readFileSync(basicData.templatePath).toString();
+
+        const dom = new JsDom.JSDOM(template);
+
+        const window = dom.window as any as Window;
+
+        const $ = JQuery(window) as any as JQueryStatic;
+
+        $("docs-content").replaceWith(`<div class="content">${html}</div>`);
+        $("docs-sidebar").replaceWith(`sidebar`);
+
+        $("a").each((i, ele) => {
+            const href = $(ele).attr("href");
+            if (href) {
+                if (Path.extname(href).toLowerCase() === ".md") {
+                    $(ele).attr("href", "");
+                }
             }
-        }
-    });
+        });
+
+        const outFilePath =
+            fileInfo.basenameExt.toLowerCase() === "readme.md"
+                ? Path.join(basicData.outDirPath, Path.dirname(path), "index.html")
+                : Path.join(
+                      basicData.outDirPath,
+                      Path.dirname(path),
+                      PathExt.base(path),
+                      "index.html"
+                  );
+        FS.mkdirpSync(Path.dirname(outFilePath));
+        FS.writeFileSync(outFilePath, Prettier.format(dom.serialize(), { parser: "html" }));
+    }
+}
+
+interface ISummaryItem {
+    children: ISummaryItem[];
+    label: string;
+    link?: string;
 }
 
 export function watch(inDirPath: string, outDirPath: string) {
-    if (!fs.existsSync(inDirPath)) throw new Error(`"${inDirPath}" isn't exist.`);
-    fs.removeSync(outDirPath);
+    if (!FS.existsSync(inDirPath)) throw new Error(`"${inDirPath}" isn't exist.`);
+    FS.removeSync(outDirPath);
+    build(inDirPath, outDirPath);
 
-    fs.watch(inDirPath, () => {
-        console.log("asd");
+    FS.watch(inDirPath, () => {
         build(inDirPath, outDirPath);
     });
 }

@@ -13,7 +13,7 @@ See [CHANGELOG.md](./CHANGELOG.md) to see changes.
 
 ## Setup
 
-You can install this package globally using `npm install docs-builder -g` and use the `doc [args...]` command.
+You can install this package globally using `npm install -g docs-builder` and use the `docs [args...]` command.
 
 Or run the npx command `npx docs-builder [args...]`.
 

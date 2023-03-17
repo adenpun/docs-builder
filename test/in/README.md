@@ -1,9 +1,25 @@
 # Introduction
 
-## Docs-builder
+## Wth is this???
 
-Use your Markdowns to create some HTMLs. This is still work in progress so this is very very bad.
+_docs-builder_ is a **very bad** tool to build documentation with [Markdown].
 
-See [Get Started](./get-started.md)
+[markdown]: https://en.wikipedia.org/wiki/Markdown
 
-![Green Pizza](./green_pizza.png)
+## Should I use _docs-builder_??
+
+I don't recommend you to use _docs-builder_, because I made _docs-builder_ for fun :)
+
+Better alternatives:
+
+-   [mdBook]
+-   [Docsify]
+-   [GitBook]
+
+[mdbook]: https://rust-lang.github.io/mdBook/
+[docsify]: https://docsify.js.org/
+[gitbook]: https://www.gitbook.com/
+
+## How to use?
+
+If you want to use, see [Quick Start](./guide/quick-start.md) for more details.

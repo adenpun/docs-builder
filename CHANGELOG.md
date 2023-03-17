@@ -2,10 +2,14 @@
 
 ## 0.X.X
 
+### 0.3.1
+
+-   Changed `doc` to `docs`
+
 ### 0.3.0
 
 -   Output code is now formatted with prettier
--   Added sidebar (`<docs-sidebar>`) (Need)
+-   Added sidebar (`<docs-sidebar>`) (Need styles)
 -   All files (that aren't markdown) in `<in>` will copy to `<out>`
 -   Empty title now will be replaced by the name of the file.
 
